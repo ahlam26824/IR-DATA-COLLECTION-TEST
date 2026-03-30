@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>IR Sensor Live Monitor</title>
+  <style>
+    body {
+      font-family: Arial;
+      background: #0f172a;
+      color: white;
+      text-align: center;
+    }
+
+    table {
+      margin: auto;
+      border-collapse: collapse;
+      width: 80%;
+      background: #1e293b;
+    }
+
+    th, td {
+      padding: 10px;
+      border: 1px solid #334155;
+    }
+
+    th {
+      background: #334155;
+    }
+
+    .detected {
+      color: red;
+      font-weight: bold;
+    }
+
+    .clear {
+      color: lime;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>📡 IR Sensor Live Monitoring</h1>
+
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Time</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+    const supabase = createClient(
+      "https://darlrsjmdvyahmteihtl.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhcmxyc2ptZHZ5YWhtdGVpaHRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3ODEzMDMsImV4cCI6MjA5MDM1NzMwM30.BdMKmcCPU4owoSB8RHOXOy_Vd1cAw41hg3KlSMFbD84"
+    )
+
+    async function loadTable() {
+      const { data, error } = await supabase
+        .from('sensor_data')
+        .select('*')
+        .order('id', { ascending: false })
+        .limit(10)   // show last 10 records
+
+      if (error) {
+        console.error(error)
+        return
+      }
+
+      const table = document.getElementById('tableBody')
+      table.innerHTML = ""
+
+      data.forEach(row => {
+        const tr = document.createElement('tr')
+
+        const statusText = row.ir_detected == 0 
+          ? '<span class="detected">🚨 Detected</span>' 
+          : '<span class="clear">✅ Clear</span>'
+
+        tr.innerHTML = `
+          <td>${row.id}</td>
+          <td>${new Date(row.created_at).toLocaleTimeString()}</td>
+          <td>${statusText}</td>
+        `
+
+        table.appendChild(tr)
+      })
+    }
+
+    loadTable()
+    setInterval(loadTable, 2000) // refresh every 2 sec
+  </script>
+
+</body>
+</html>
